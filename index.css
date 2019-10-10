@@ -98,6 +98,8 @@ html, body {
 
 #balloon1, #balloon2, #balloon3, #balloon4 {
     position: fixed;
+    width: 60px;
+    height: 123px;
 }
 
 #note {
