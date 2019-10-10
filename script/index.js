@@ -316,8 +316,8 @@ function createBalloons() {
 
 // Menu
 function calcPos(element, settings) {
-    var x = Math.ceil(Math.random() * (settings.width - element.width() * 1.5 - 100)) + 60,
-        y = Math.ceil(Math.random() * (settings.height - element.height() * 1.5 - 100)) + 60;
+    var x = Math.ceil(Math.random() * (settings.width - element.width() * 1.5 - 80)) + 40 + settings.left,
+        y = Math.ceil(Math.random() * (settings.height - element.height() * 1.5 - 80)) + 40 + settings.top;
 
     return [x, y];
 }
@@ -392,6 +392,8 @@ function stopAudio(audio) {
 // Main
 function main() {
     var settings = {
+        left: 0,
+        top: 0,
         width: 340,
         height: 544
     };
