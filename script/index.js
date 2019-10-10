@@ -1,6 +1,324 @@
+var STARTED = false, COUNT = 0, LIMIT = 999, TAU = Math.PI * 2;
+
+// Stars
+var Particle = (function () {
+    function Particle(texture, frame) {
+        this.texture = texture;
+        this.frame = frame;
+        this.alive = false;
+        this.width = frame.width;
+        this.height = frame.height;
+        this.originX = frame.width / 2;
+        this.originY = frame.height / 2;
+    }
+
+    Particle.prototype.init = function (x, y) {
+        if (x === void 0) {
+            x = 0;
+        }
+
+        if (y === void 0) {
+            y = 0;
+        }
+
+        var angle = random(TAU);
+        var force = random(2, 6);
+        this.x = x;
+        this.y = y;
+        this.alpha = 1;
+        this.alive = true;
+        this.theta = angle;
+        this.vx = Math.sin(angle) * force;
+        this.vy = Math.cos(angle) * force;
+        this.rotation = Math.atan2(this.vy, this.vx);
+        this.drag = random(0.82, 0.97);
+        this.scale = random(0.1, 0.8);
+        this.wander = random(0.5, 1.0);
+        this.matrix = {
+            a: 1,
+            b: 0,
+            c: 0,
+            d: 1,
+            tx: 0,
+            ty: 0
+        };
+        return this;
+    };
+
+    Particle.prototype.update = function () {
+        var matrix = this.matrix;
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= this.drag;
+        this.vy *= this.drag;
+        this.theta += random(-0.5, 0.5) * this.wander;
+        this.vx += Math.sin(this.theta) * 0.1;
+        this.vy += Math.cos(this.theta) * 0.1;
+        this.rotation = Math.atan2(this.vy, this.vx);
+        this.alpha *= 0.98;
+        this.scale *= 0.985;
+        this.alive = this.scale > 0.06 && this.alpha > 0.06;
+        var cos = Math.cos(this.rotation) * this.scale;
+        var sin = Math.sin(this.rotation) * this.scale;
+        matrix.a = cos;
+        matrix.b = sin;
+        matrix.c = -sin;
+        matrix.d = cos;
+        matrix.tx = this.x - ((this.originX * matrix.a) + (this.originY * matrix.c));
+        matrix.ty = this.y - ((this.originX * matrix.b) + (this.originY * matrix.d));
+        return this;
+    };
+
+    Particle.prototype.draw = function (context) {
+        var m = this.matrix;
+        var f = this.frame;
+        context.globalAlpha = this.alpha;
+        context.setTransform(m.a, m.b, m.c, m.d, m.tx, m.ty);
+        context.drawImage(this.texture, f.x, f.y, f.width, f.height, 0, 0, this.width, this.height);
+        return this;
+    };
+
+    return Particle;
+} ());
+
+var Stars = (function () {
+    function Stars(options) {
+        var _this = this;
+
+        this.pool = [];
+        this.particles = [];
+        this.pointer = {
+            x: -9999,
+            y: -9999
+        };
+
+        this.buffer = document.createElement("canvas");
+        document.getElementById("base").appendChild(this.buffer);
+        this.bufferContext = this.buffer.getContext("2d");
+        this.supportsFilters = (typeof this.bufferContext.filter !== "undefined");
+
+        this.pointerMove = function (event) {
+            event.preventDefault();
+            var pointer = event.targetTouches ? event.targetTouches[0] : event;
+            _this.pointer.x = pointer.clientX;
+            _this.pointer.y = pointer.clientY;
+            for (var i = 0; i < random(2, 7); i++) {
+                _this.spawn(_this.pointer.x, _this.pointer.y);
+            }
+        };
+        this.resize = function (width, height) {
+            _this.width = _this.buffer.width = _this.view.width = width;
+            _this.height = _this.buffer.height = _this.view.height = height;
+        };
+        this.render = function (time) {
+            var context = _this.context;
+            var particles = _this.particles;
+            var bufferContext = _this.bufferContext;
+            context.fillStyle = _this.backgroundColor;
+            context.fillRect(0, 0, _this.width, _this.height);
+
+            bufferContext.globalAlpha = 1;
+            bufferContext.setTransform(1, 0, 0, 1, 0, 0);
+            bufferContext.clearRect(0, 0, _this.width, _this.height);
+            bufferContext.globalCompositeOperation = _this.blendMode;
+
+            for (var i = 0; i < particles.length; i++) {
+                var particle = particles[i];
+                if (particle.alive) {
+                    particle.update();
+                } else {
+                    _this.pool.push(particle);
+                    removeItems(particles, i, 1);
+                }
+            }
+            for (var _i = 0, particles_1 = particles; _i < particles_1.length; _i++) {
+                var particle = particles_1[_i];
+                particle.draw(bufferContext);
+            }
+            if (_this.supportsFilters) {
+                if (_this.useBlurFilter) {
+                    context.filter = "blur(" + _this.filterBlur + "px)";
+                }
+                context.drawImage(_this.buffer, 0, 0);
+                if (_this.useContrastFilter) {
+                    context.filter = "drop-shadow(4px 4px 4px rgba(0,0,0,1)) contrast(" + _this.filterContrast + "%)";
+                }
+            }
+
+            context.filter = "none";
+            requestAnimationFrame(_this.render);
+        };
+
+        Object.assign(this, options);
+        this.context = this.view.getContext("2d", {
+            alpha: false
+        });
+    }
+
+    Stars.prototype.spawn = function (x, y) {
+        var particle;
+
+        if (this.particles.length > this.maxParticles) {
+            particle = this.particles.shift();
+        } else if (this.pool.length) {
+            particle = this.pool.pop();
+        } else {
+            particle = new Particle(this.texture, sample(this.frames));
+        }
+
+        particle.init(x, y);
+        this.particles.push(particle);
+
+        if (STARTED && ++COUNT == LIMIT) {
+            stopAudio(document.getElementById("birthday"));
+            console.log("haha");
+        }
+
+        return this;
+    };
+
+    Stars.prototype.start = function () {
+        this.resize(this.width, this.height);
+        this.render();
+        this.view.style.visibility = "visible";
+
+        if (window.PointerEvent) {
+            window.addEventListener("pointermove", this.pointerMove);
+        } else {
+            window.addEventListener("mousemove", this.pointerMove);
+            window.addEventListener("touchmove", this.pointerMove);
+        }
+
+        requestAnimationFrame(this.render);
+        return this;
+    };
+
+    return Stars;
+} ());
+
+function createFrames(numFrames, width, height) {
+    var frames = [];
+    for (var i = 0; i < numFrames; i++) {
+        frames.push({
+            x: width * i,
+            y: 0,
+            width: width,
+            height: height
+        });
+    }
+    return frames;
+}
+
+function removeItems(array, startIndex, removeCount) {
+    var length = array.length;
+    if (startIndex >= length || removeCount === 0) {
+        return;
+    }
+
+    removeCount = (startIndex + removeCount > length ? length - startIndex : removeCount);
+
+    var len = length - removeCount;
+    for (var i = startIndex; i < len; ++i) {
+        array[i] = array[i + removeCount];
+    }
+    array.length = len;
+}
+
+function random(min, max) {
+    if (max == null) {
+        max = min;
+        min = 0;
+    }
+
+    if (min > max) {
+        var tmp = min;
+        min = max;
+        max = tmp;
+    }
+
+    return min + (max - min) * Math.random();
+}
+
+function sample(array) {
+    return array[(Math.random() * array.length) | 0];
+}
+
+var stars = new Stars({
+    view: document.querySelector("#view"),
+    texture: document.querySelector("#stars"),
+    frames: createFrames(5, 80, 80),
+    width: 340,
+    height: 544,
+    maxParticles: 800,
+    backgroundColor: "#000",
+    blendMode: "lighter",
+    filterBlur: 50,
+    filterContrast: 300,
+    useBlurFilter: true,
+    useContrastFilter: true
+});
+
+// Balloons
+var Balloon = function (id, settings) {
+    var self = document.getElementById(id);
+
+	this.bundle = document.getElementById("bundle");
+	this.balloon = {
+		obj: self,
+		x: Math.random() * (this.bundle.clientWidth - self.clientWidth - settings.margin * 2) + settings.left + settings.margin,
+		y: Math.random() * settings.margin + settings.top + settings.margin,
+		amplitude: {
+			x: 0.02 + Math.random() / 10,
+			y: 0.5 + Math.random() / 2
+		},
+		amplifier: Math.random() * 20,
+		angle: 0
+	}
+
+	this.setTimer(settings);
+};
+
+Balloon.prototype.setTimer = function (settings) {
+	this.move(settings);
+	var self = this;
+	setTimeout(function () {self.setTimer(settings)}, 20);
+};
+
+Balloon.prototype.move = function (settings) {
+	var balloon = this.balloon;
+
+	balloon.y += balloon.amplitude.y;
+
+	if (balloon.y + balloon.obj.clientHeight + settings.margin > this.bundle.clientHeight + settings.top) {
+		balloon.y = Math.random() * settings.margin + settings.top + settings.margin;
+	}
+
+	balloon.angle += balloon.amplitude.x;
+	balloon.obj.style.top = balloon.y + "px";
+	balloon.obj.style.left = balloon.x + balloon.amplifier * Math.sin(balloon.angle) + "px";
+};
+
+function createObj(type, parent, id, src) {
+    var obj = document.createElement(type);
+    obj.id = id;
+    obj.src = src;
+    document.getElementById(parent).appendChild(obj);
+}
+
+function createBalloons(settings) {
+    var ids = ["balloon1", "balloon2", "balloon3", "balloon4"],
+        srcs = ["image/balloon_blue.png", "image/balloon_red.png"];
+
+    for (var i = 0, n = ids.length, m = srcs.length; i < n; i++) {
+        createObj("img", "bundle", ids[i], srcs[i % m]);
+        new Balloon(ids[i], settings);
+    }
+}
+
+// Menu
 function calcPos(element, settings) {
-    var x = Math.ceil(Math.random() * (settings.width - element.width() * 1.5 - settings.margin * 2)) + settings.left + settings.margin,
-        y = Math.ceil(Math.random() * (settings.height - element.height() * 1.5 - settings.margin * 2)) + settings.top + settings.margin;
+    var x = Math.ceil(Math.random() * (settings.width - element.width() * 1.5 - settings.margin * 4)) + settings.left + settings.margin * 2,
+        y = Math.ceil(Math.random() * (settings.height - element.height() * 1.5 - settings.margin * 4)) + settings.top + settings.margin * 2;
 
     return [x, y];
 }
@@ -49,337 +367,48 @@ function typing(note) {
     }, 375);
 }
 
-function waterRipple(element, settings) {
-    // 默认设置
-    var defaults = {
-        image: "",
-        margin: 0,
-        left: 0,
-        top: 0,
-        width: 320,
-        height: 320,
-        dropRadius: 4,
-        attenuation: 5,
-        maxAmplitude: 1024,
-        sourceAmplitude: 512,
-        delay: 1,
-        auto: true
+function playAudio(audio, loop) {
+    var playPromise = audio.play();
+
+    if (playPromise !== undefined) {
+        playPromise.then(_ => {
+        })
+        .catch(error => {
+        });
+    }
+
+    audio.onended = function () {
+        if (loop) {
+            this.currentTime = 0;
+            this.play();
+        }
     };
-
-    // 合并设置
-    for (var item in defaults) {
-        if (!settings.hasOwnProperty(item)) {
-            settings[item] = defaults[item];
-        }
-    }
-
-    // 检测背景图
-    if (!settings.image.length) {
-        return null;
-    }
-
-    var image,
-        width = settings.width,
-        height = settings.height,
-        dropRadius = settings.dropRadius,
-        attenuation = settings.attenuation,
-        maxAmplitude = settings.maxAmplitude,
-        sourceAmplitude = settings.sourceAmplitude,
-        delay = settings.delay * 1000,
-        half_width = width >> 1,
-        half_height = height >> 1,
-        amplitude_size = width * (height + 2) * 2,
-        old_index = width,
-        new_index = width * (height + 3),
-        map_index, // 振幅数组索引
-        texture, // 原始图像像素信息
-        ripple, // 参数波纹的图像像素信息
-        autoRepeat, // 自动产生波源的重复事件
-        ripple_map = [],
-        last_map = [];
-
-    var canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    element.appendChild(canvas);
-
-    var ctx = canvas.getContext("2d");
-    ctx.fillRect(0, 0, width, height);
-
-    window.requestAnimationFrame = (function () {
-        return window.requestAnimationFrame       ||
-               window.webkitRequestAnimationFrame ||
-               window.mozRequestAnimationFrame    ||
-               window.oRequestAnimationFrame      ||
-               window.msRequestAnimationFrame     ||
-               function (e) {
-                   window.setTimeout(e, 1000 / 60);
-               };
-    }) ();
-
-    // 加载图片
-    function loadImage() {
-        image = new Image();
-        image.src = settings.image;
-        image.onload = function () {
-            init();
-        }
-    }
-
-    // 保存图像的所有像素信息
-    function saveImageData() {
-        // 在canvas中绘制图形
-        ctx.drawImage(image, 0, 0);
-
-        // 图像的ImageData对象
-        texture = ctx.getImageData(0, 0, width, height);
-        ripple = ctx.getImageData(0, 0, width, height);
-    }
-
-    function init() {
-        saveImageData();
-
-        // 波幅数组初始化为0
-        for (var i = 0; i < amplitude_size; i++) {
-            ripple_map[i] = last_map[i] = 0;
-        }
-
-        animate();
-
-        // 随机参数波源
-        if (settings.auto) {
-            autoRepeat = setInterval(function () {
-                disturb(Math.random() * width, Math.random() * height);
-            }, delay);
-            disturb(Math.random() * width, Math.random() * height);
-        }
-    }
-
-    // 动画主循环
-    function animate() {
-        requestAnimationFrame(animate);
-        renderRipple();
-    }
-
-    // 在指定位置产生波源
-    function disturb(circleX, circleY) {
-        // 向下取整
-        circleX <<= 0;
-        circleY <<= 0;
-
-        var maxDistanceX = circleX + dropRadius,
-            maxDistanceY = circleY + dropRadius;
-
-        for (var y = circleY - dropRadius; y < maxDistanceY; y++) {
-            for (var x = circleX - dropRadius; x < maxDistanceX; x++) {
-                ripple_map[old_index + y * width + x] += sourceAmplitude;
-            }
-        }
-    }
-
-    // 渲染下一帧
-    function renderRipple() {
-        var i = old_index,
-            deviation_x, // 水平方向偏移
-            deviation_y, // 竖直方向偏移
-            pixel_source, // 原始ImageData对象像素索引
-            pixel_deviation; // 偏移后的ImageData对象像素索引
-
-        // 交互索引
-        old_index = new_index;
-        new_index = i;
-
-        // 设置像素索引和振幅索引
-        i = 0;
-        map_index = old_index;
-
-        // 使用局部变量优化全局作用域查询
-        var _width = width,
-            _height = height,
-            _half_width = half_width,
-            _half_height = half_height,
-            _attenuation = attenuation,
-            _maxAmplitude = maxAmplitude,
-            _new_index = new_index,
-            _map_index = map_index,
-            _ripple_map = ripple_map,
-            _last_map = last_map,
-            _texture_data = texture.data,
-            _ripple_data = ripple.data;
-
-        // 渲染所有像素点
-        for (var y = 0; y < _height; y++) {
-            for (var x = 0; x < _width; x++) {
-                var x_boundary = 0, judge = _map_index % _width;
-
-                if (judge == 0) {
-                    x_boundary = 1; // 左边边界
-                }
-                else if (judge == _width - 1) {
-                    x_boundary = 2; // 右边边界
-                }
-
-                var top = _ripple_map[_map_index - _width], // 上边相邻点
-                    bottom = _ripple_map[_map_index + _width], // 下边相邻点
-                    left = x_boundary != 1 ? _ripple_map[_map_index - 1] : 0, // 左边相邻点
-                    right = x_boundary != 2 ? _ripple_map[_map_index + 1] : 0; // 右边相邻点
-
-                // 计算当前像素点下一时刻的振幅
-                var amplitude = (top + bottom + left + right) >> 1;
-                amplitude -= _ripple_map[_new_index + i];
-                amplitude -= amplitude >> _attenuation;
-
-                // 更新振幅数组
-                _ripple_map[_new_index + i] = amplitude;
-                amplitude = _maxAmplitude - amplitude;
-
-                var old_amplitude = _last_map[i];
-                _last_map[i] = amplitude;
-
-                if (old_amplitude != amplitude) {
-                    deviation_x = (((x - _half_width) * amplitude / _maxAmplitude) << 0) + _half_width;
-                    deviation_y = (((y - _half_height) * amplitude / _maxAmplitude) << 0) + _half_height;
-
-                    // 检查边界
-                    if (deviation_x > _width) {
-                        deviation_x = _width - 1;
-                    }
-
-                    if (deviation_x < 0) {
-                        deviation_x = 0;
-                    }
-
-                    if (deviation_y > _height) {
-                        deviation_y = _height - 1;
-                    }
-
-                    if (deviation_y < 0) {
-                        deviation_y = 0;
-                    }
-
-                    pixel_source = i * 4;
-                    pixel_deviation = (deviation_x + (deviation_y * _width)) * 4;
-
-                    // 移动像素的RGBA信息
-                    _ripple_data[pixel_source] = _texture_data[pixel_deviation];
-                    _ripple_data[pixel_source + 1] = _texture_data[pixel_deviation + 1];
-                    _ripple_data[pixel_source + 2] = _texture_data[pixel_deviation + 2];
-                }
-
-                i++;
-                _map_index++;
-            }
-        }
-
-        map_index = _map_index;
-        ctx.putImageData(ripple, 0, 0);
-    }
-
-    function calcAmplitude(index, old_amplitude) {
-        var x_boundary = 0, judge = map_index % width;
-
-        if (judge == 0) {
-            x_boundary = 1; // 左边边界
-        }
-        else if (judge == width - 1) {
-            x_boundary = 2; // 右边边界
-        }
-
-        var top = ripple_map[index - width], // 上边相邻点
-            bottom = ripple_map[index + width], // 下边相邻点
-            left = x_boundary != 1 ? ripple_map[index - 1] : 0, // 左边相邻点
-            right = x_boundary != 2 ? ripple_map[index + 1] : 0; // 右边相邻点
-
-        // 计算当前像素点下一时刻的振幅
-        var amplitude = (top + bottom + left + right) >> 1;
-        amplitude -= old_amplitude;
-        amplitude -= amplitude >> attenuation;
-
-        return amplitude;
-    }
-
-    this.disturb = function (x, y) {
-        disturb(x, y);
-    };
-
-    loadImage();
-    return this;
 }
 
+function stopAudio(audio) {
+    audio.pause();
+    audio.currentTime = 0;
+}
+
+// Main
 function main() {
     var settings = {
-        image: "image/background.png",
-        margin: 40,
+        margin: 20,
         left: 10,
         top: 10,
         width: 340,
         height: 544
     };
 
-    var divView = document.getElementById("view"),
+    var divBase = document.getElementById("base"),
         divNote = document.getElementById("note"),
         divButton = document.getElementById("button"),
         divPop = document.getElementById("pop"),
-        divRain = document.getElementById("rain"),
-        divSea = document.getElementById("sea"),
-        divAncientry = document.getElementById("ancientry"),
-        divPast = document.getElementById("past"),
-        divTime = document.getElementById("time"),
-        divSkyline = document.getElementById("skyline"),
-        divStars = document.getElementById("stars"),
-        divTravel = document.getElementById("travel"),
-        divBeethoven = document.getElementById("beethoven");
+        divBirthday = document.getElementById("birthday");
 
-    var playlist = [divRain, divSea, divAncientry, divPast, divTime, divSkyline, divStars, divTravel, divBeethoven],
-        len = playlist.length, curr = 0, count = 0, limit = 4,
-        isClicked = false, isPlayed = false,
-        waterRippleEffect = new waterRipple(divView, settings);
+    var isClicked = false, isPlayed = false;
 
-    function playAudio(audio, next) {
-        var playPromise = audio.play();
-
-        if (playPromise !== undefined) {
-            playPromise.then(_ => {
-            })
-            .catch(error => {
-            });
-        }
-
-        audio.onended = function () {
-            if (next) {
-                curr = nextAudio(len, curr);
-            }
-        };
-    }
-
-    function stopAudio(audio) {
-        audio.pause();
-        audio.currentTime = 0;
-    }
-
-    function nextAudio(len, curr) {
-        stopAudio(playlist[curr]);
-
-        if (++curr >= len) {
-            curr = 0;
-        }
-
-        playAudio(playlist[curr], true);
-        return curr;
-    }
-
-    function shuffleAudio(len, curr) {
-        var next;
-        stopAudio(playlist[curr]);
-
-        do {
-            next = Math.floor(Math.random() * len);
-        } while (next == curr);
-
-        playAudio(playlist[next], true);
-        return next;
-    }
-
+    stars.start()
     animateElement($("#button"), settings);
 
     divButton.onclick = function () {
@@ -406,29 +435,22 @@ function main() {
             }
         }, 250);
 
-        if (!isPlayed) {
-            isPlayed = true;
+        if (!STARTED) {
+            STARTED = true;
             playAudio(divPop, false);
-            playAudio(playlist[curr], true);
+            playAudio(divBirthday, true);
+            createBalloons(settings);
             typing(divNote);
         }
     };
 
-    divView.onclick = function (e) {
-        waterRippleEffect.disturb(e.layerX, e.layerY);
-
-        if (isPlayed && ++count >= limit) {
-            count = 0;
-            curr = shuffleAudio(len, curr);
-        }
+    divBase.onclick = function (e) {
     };
 
-    divView.onmousemove = function (e) {
-        waterRippleEffect.disturb(e.layerX, e.layerY);
+    divBase.onmousemove = function (e) {
     };
 
-    divView.ontouchmove = function (e) {
-        waterRippleEffect.disturb(e.layerX, e.layerY);
+    divBase.ontouchmove = function (e) {
     };
 }
 
