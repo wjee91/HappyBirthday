@@ -21,8 +21,7 @@ var Particle = (function () {
             y = 0;
         }
 
-        var angle = random(TAU);
-        var force = random(2, 6);
+        var angle = random(TAU), force = random(2, 6);
         this.x = x;
         this.y = y;
         this.alpha = 1;
@@ -170,7 +169,6 @@ var Stars = (function () {
         this.particles.push(particle);
 
         if (STARTED && ++COUNT == LIMIT) {
-            stopAudio(document.getElementById("birthday"));
             console.log("haha");
         }
 
@@ -306,8 +304,8 @@ function createObj(type, parent, id, src) {
 }
 
 function createBalloons(settings) {
-    var ids = ["balloon1", "balloon2", "balloon3", "balloon4"],
-        srcs = ["image/balloon_blue.png", "image/balloon_red.png"];
+    var ids = ["balloon1", "balloon2", "balloon3", "balloon4", "balloon5"],
+        srcs = ["image/balloon_blue.png", "image/balloon_gold.png", "image/balloon_pink.png", "image/balloon_violet.png", "image/balloon_white.png"];
 
     for (var i = 0, n = ids.length, m = srcs.length; i < n; i++) {
         createObj("img", "bundle", ids[i], srcs[i % m]);

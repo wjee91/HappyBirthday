@@ -96,10 +96,10 @@ html, body {
     height: 544px;
 }
 
-#balloon1, #balloon2, #balloon3, #balloon4 {
+#balloon1, #balloon2, #balloon3, #balloon4, #balloon5 {
     position: fixed;
     width: 60px;
-    height: 123px;
+    height: 140px;
 }
 
 #note {
