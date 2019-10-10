@@ -263,8 +263,8 @@ var Balloon = function (id, settings) {
 	this.bundle = document.getElementById("bundle");
 	this.balloon = {
 		obj: self,
-		x: Math.random() * (this.bundle.clientWidth - self.clientWidth - settings.margin * 2) + settings.left + settings.margin,
-		y: Math.random() * settings.margin + settings.top + settings.margin,
+		x: Math.ceil(Math.random() * (this.bundle.clientWidth - self.clientWidth - settings.margin * 2)) + settings.left + settings.margin,
+		y: Math.ceil(Math.random() * settings.margin) + settings.top + settings.margin,
 		amplitude: {
 			x: 0.02 + Math.random() / 10,
 			y: 0.5 + Math.random() / 2
@@ -288,7 +288,7 @@ Balloon.prototype.move = function (settings) {
 	balloon.y += balloon.amplitude.y;
 
 	if (balloon.y + balloon.obj.clientHeight + settings.margin > this.bundle.clientHeight + settings.top) {
-		balloon.y = Math.random() * settings.margin + settings.top + settings.margin;
+		balloon.y = Math.ceil(Math.random() * settings.margin) + settings.top + settings.margin;
 	}
 
 	balloon.angle += balloon.amplitude.x;
