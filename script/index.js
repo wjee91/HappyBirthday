@@ -1,4 +1,4 @@
-var STARTED = false, COUNT = 0, TAU = Math.PI * 2;
+var STARTED = false, COUNT = 0, LIMIT = 999, TAU = Math.PI * 2;
 
 // Stars
 var Particle = (function () {
@@ -168,7 +168,7 @@ var Stars = (function () {
         particle.init(x, y);
         this.particles.push(particle);
 
-        if (STARTED && ++COUNT == 999) {
+        if (STARTED && ++COUNT == LIMIT) {
             stopAudio(document.getElementById("birthday"));
             console.log("haha");
         }
