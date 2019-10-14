@@ -88,7 +88,11 @@ html, body {
     background-image: url("image/background.png");
 }
 
-#base, #view, #bundle {
+#meteor {
+    z-index: 80;
+}
+
+#base, #view, #meteor, #bundle {
     position: fixed;
     left: 10px;
     top: 10px;
