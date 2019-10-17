@@ -176,8 +176,8 @@ var Particle = (function () {
         matrix.b = sin;
         matrix.c = -sin;
         matrix.d = cos;
-        matrix.tx = this.x - ((this.originX * matrix.a) + (this.originY * matrix.c));
-        matrix.ty = this.y - ((this.originX * matrix.b) + (this.originY * matrix.d));
+        matrix.tx = this.x - (this.originX * matrix.a + this.originY * matrix.c);
+        matrix.ty = this.y - (this.originX * matrix.b + this.originY * matrix.d);
 
         return this;
     };
@@ -376,8 +376,8 @@ function createFrames(numFrames, width, height) {
     return frames;
 }
 
-function removeItems(array, startIndex, removeCount) {
-    var length = array.length;
+function removeItems(items, startIndex, removeCount) {
+    var length = items.length;
 
     if (startIndex >= length || removeCount == 0) {
         return;
@@ -388,10 +388,10 @@ function removeItems(array, startIndex, removeCount) {
     var len = length - removeCount;
 
     for (var i = startIndex; i < len; ++i) {
-        array[i] = array[i + removeCount];
+        items[i] = items[i + removeCount];
     }
 
-    array.length = len;
+    items.length = len;
 }
 
 function random(min, max) {
