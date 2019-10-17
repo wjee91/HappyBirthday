@@ -18,7 +18,7 @@ var balloons = ["balloon1", "balloon2", "balloon3", "balloon4", "balloon5"],
 // Meteors
 var Stellar = function () {
     this.getColor = function () {
-        this.color = Math.random() < 0.5 ? "#333" : "#fff";
+        this.color = Math.random() < 0.5 ? "#222" : "#fff";
     }
 
     this.draw = function (context) {
@@ -41,11 +41,11 @@ function playStellar(stellars, stellarCount, context) {
     setTimeout(playStellar, 100, stellars, stellarCount, context);
 }
 
- var Meteor = function () {
+var Meteor = function () {
     this.getRandomColor = function () {
         var x = Math.ceil(255 - 240 * Math.random());
         this.color1 = "rgba("+x+", "+x+", "+x+", 1)";
-        this.color2 = "#111";
+        this.color2 = "#222";
     }
 
     this.getPos = function () {
