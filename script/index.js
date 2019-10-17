@@ -316,7 +316,7 @@ var Stars = (function () {
                     divMeteors.width = settings.width;
                     divMeteors.height = settings.height;
                     var context = divMeteors.getContext("2d"),
-                        stellarCount = 90, meteorCount = 9,
+                        stellarCount = 70, meteorCount = 7,
                         stellars = new Array(), meteors = new Array();
 
                     for (var i = 0; i < stellarCount; i++) {
