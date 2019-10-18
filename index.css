@@ -89,7 +89,7 @@ html, body {
 }
 
 #meteors {
-    z-index: 80;
+    z-index: 70;
 }
 
 #base, #view, #meteors, #bundle {
@@ -108,12 +108,13 @@ html, body {
 
 #note {
     position: fixed;
-    left: 30px;
+    left: 20px;
     top: 264px;
     line-height: 40px;
     text-align: left;
-    font-size: 20px;
+    font-size: 14px;
     font-weight: 900;
+    z-index: 80;
 }
 
 #button {
