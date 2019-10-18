@@ -247,8 +247,8 @@ var Stars = (function () {
                 }
             }
 
-            for (var _i = 0, particles_1 = particles; _i < particles_1.length; _i++) {
-                var particle = particles_1[_i];
+            for (var i = 0, particles_1 = particles; i < particles_1.length; i++) {
+                var particle = particles_1[i];
                 particle.draw(bufferContext);
             }
 
