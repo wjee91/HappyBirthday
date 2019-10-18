@@ -125,11 +125,11 @@ var Particle = (function () {
     }
 
     Particle.prototype.init = function (x, y) {
-        if (x == void 0) {
+        if (x === void 0) {
             x = 0;
         }
 
-        if (y == void 0) {
+        if (y === void 0) {
             y = 0;
         }
 
