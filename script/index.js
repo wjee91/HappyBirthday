@@ -207,7 +207,7 @@ var Stars = (function () {
         this.buffer = document.createElement("canvas");
         divBase.appendChild(this.buffer);
         this.bufferContext = this.buffer.getContext("2d");
-        this.supportsFilters = (typeof this.bufferContext.filter !== "undefined");
+        this.supportsFilters = typeof this.bufferContext.filter !== "undefined";
 
         this.pointerMove = function (event) {
             event.preventDefault();
